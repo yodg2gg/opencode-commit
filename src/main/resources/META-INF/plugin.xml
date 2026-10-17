@@ -1,0 +1,43 @@
+<idea-plugin>
+    <id>com.github.opencodecommit</id>
+    <name>OpenCode Commit Message</name>
+    <vendor url="https://opencode.ai">yodg2gg</vendor>
+
+    <description>
+        <![CDATA[
+        调用本地 OpenCode CLI 生成规范的 Conventional Commits 提交信息。<br/>
+        <ul>
+            <li>在 Commit 工具窗口勾选文件后点击生成按钮，只针对勾选的文件生成；</li>
+            <li>没有勾选任何文件时，自动使用暂存区(staged) 的 diff；</li>
+            <li>暂存区为空时，可配置回落使用未暂存改动；未跟踪的新文件以内容快照形式提供。</li>
+        </ul>
+        前置条件：本机已安装 OpenCode CLI 并完成模型登录（OpenCode v1.x）。
+        ]]>
+    </description>
+    <change-notes>1.0.0 首个版本</change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+                serviceImplementation="com.github.opencodecommit.OpenCodeCommitSettings"/>
+        <applicationConfigurable
+                parentId="tools"
+                id="settings.opencode.commit"
+                instance="com.github.opencodecommit.OpenCodeCommitConfigurable"
+                displayName="OpenCode Commit Message"/>
+        <notificationGroup id="opencode.commit" displayType="BALLOON" isLogByDefault="true"/>
+    </extensions>
+
+    <actions>
+        <action id="OpenCodeCommit.GenerateMessage"
+                class="com.github.opencodecommit.GenerateCommitMessageAction"
+                icon="/icons/opencodeCommit.svg"
+                text="Generate Commit Message By OpenCode"
+                description="使用 OpenCode 根据勾选的文件（无勾选时用暂存区 diff）生成规范的提交信息">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>

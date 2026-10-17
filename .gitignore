@@ -1,0 +1,17 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# IntelliJ Platform
+.intellijPlatform/
+
+# Kotlin
+.kotlin/
+
+# IDEA 项目文件
+.idea/
+*.iml
+
+# 本地配置
+local.properties
