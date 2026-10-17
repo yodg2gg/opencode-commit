@@ -2,6 +2,9 @@
 
 用本地 [opencode](https://opencode.ai) CLI 自动生成规范的 **Conventional Commits** 提交信息，直接写进 IDEA 的提交信息输入框。
 
+> **命名说明**：UI 上叫 **OpenCode**（品牌名），但真正执行的命令仍写作小写的 `opencode`。
+> 插件只在设置里按"可执行文件"这一栏的值为名字去唤起进程，所以你自己编译/改过名字的 CLI 也照样能用。
+
 ## 核心行为
 
 | 场景 | 取什么内容交给 opencode |
@@ -24,13 +27,23 @@
 
 1. 本机已安装 opencode CLI（v1.x）：`opencode --version` 能正常输出即可。
    - 例如 `npm i -g opencode-ai`、`choco install opencode` 或 `brew install sst/tap/opencode`。
-2. **并且已经配置好模型 key**：`opencode auth login` 按提示登录/填 API key，或在项目/全局的
-   `opencode.json` 里配好 provider。没配 key 时 opencode 会返回
+2. **配置好模型 key**（没有 key 也可以，见下方第 2 点）：`opencode auth login` 按提示登录/填 API key，
+   或在项目/全局的 `opencode.json` 里配好 provider。没配 key 时 opencode 会返回
    `No candidate model has a configured, usable provider key`（HTTP 503），插件会把它原样显示在通知里。
-   - 想指定某个模型，除了 `opencode auth login` 之外，也可以在插件设置里填 `-m provider/model`。
-2. 插件依赖 **Git4Idea**，所以非 Git 仓库会直接提示"当前项目不是 Git 仓库"。
+   - 想指定某个模型，除了 `opencode auth login` 之外，也可以在插件设置里用"获取模型列表"按钮挑，
+     或直接填 `-m provider/model` 的形式。
+   - 没有 key 也能试：opencode 自带若干免登录模型（如 `opencode/deepseek-v4.1-flash-free`），
+     终端 `opencode models` 列出来的、带 `-free` 后缀的一般都能直接用。
+3. 插件依赖 **Git4Idea**，所以非 Git 仓库会直接提示"当前项目不是 Git 仓库"。
 
-## 构建与安装
+## 安装
+
+**方式一：直接装构建好的包**（最省事）
+
+1. 从 [Releases](https://github.com/yodg2gg/opencode-commit/releases) 页面下载 `opencode-commit-1.0.0.zip`；
+2. IDEA → Settings → Plugins → ⚙ → *Install Plugin from Disk…* → 选中该 zip → 重启 IDE。
+
+**方式二：自己从源码构建**
 
 需要 **JDK 17+**。首次构建会下载 IntelliJ IDEA Community 2024.3 依赖（约 700MB）。
 
@@ -45,14 +58,14 @@
 ./gradlew runIde
 ```
 
-仓库已自带 `gradlew` / `gradlew.bat`，且其 `distributionUrl` 指向国内镜像
-`https://mirrors.cloud.tencent.com/gradle/gradle-8.12-bin.zip`，所以不必额外安装 Gradle，直接跑上面的命令即可。
+仓库已自带 `gradlew` / `gradlew.bat`，不用额外安装 Gradle，直接跑上面的命令即可。
 
-安装：IDEA → Settings → Plugins → ⚙ → *Install Plugin from Disk…* → 选择
-`build/distributions/opencode-commit-1.0.0.zip`，然后重启 IDE。
+> **关于 Gradle 分发地址**：`gradle/wrapper/gradle-wrapper.properties` 里的 `distributionUrl`
+> 指向腾讯云镜像，国内拉取很快；如果在海外构建建议换回官方地址，只需把这一行改成
+> `distributionUrl=https\://services.gradle.org/distributions/gradle-8.12-bin.zip` 即可。
 
 > 构建状态：已在 Windows 11 + Microsoft OpenJDK 17.0.20.1 + Gradle 8.12 下 `./gradlew buildPlugin` 通过，
-> 产物约 67KB（`opencode-commit/lib/opencode-commit-1.0.0.jar`）。
+> 产物 `opencode-commit-1.0.0.zip` 约 66KB（其中的 `lib/opencode-commit-1.0.0.jar` 约 70KB）。
 
 兼容范围：`since-build 243`，即 IDEA 2024.3 及更新版本（含所有基于该平台的 JetBrains IDE）。
 
@@ -86,7 +99,9 @@
 
 设置页里还有两个辅助按钮：
 - **获取模型列表**：执行 `opencode models`，在输入框下方弹出可搜索的模型候选列表，点选即回填"模型"输入框；
-- **验证 OpenCode**：执行 `--version`，用来确认路径/环境是否正确。两个按钮都实时读取输入框的当前值，改完路径不必先点 Apply。
+- **验证 OpenCode**：执行 `<可执行文件> --version`，用来确认路径/环境是否正确。
+
+两个按钮都实时读取输入框的当前值，所以改完路径不必先点 Apply 就能验证。
 
 > 拉到的列表是 opencode 本地缓存的。如果你刚在别的机器/环境加了新 key，列表看着不对时，
 > 在终端跑一次 `opencode models --refresh` 刷新缓存即可。
@@ -143,15 +158,27 @@ opencode-commit/
 ├─ build.gradle.kts
 ├─ settings.gradle.kts
 ├─ gradle.properties
+├─ LICENSE                                 # MIT
 ├─ src/main/
 │  ├─ kotlin/com/github/opencodecommit/
-│  │  ├─ GenerateCommitMessageAction.kt    # 入口 Action（单击即生成）
+│  │  ├─ GenerateCommitMessageAction.kt      # 入口 Action（单击即生成）
 │  │  ├─ OpenOpenCodeCommitSettingsAction.kt # 通知气泡上的打开设置页按钮
-│  │  ├─ DiffCollector.kt                 # 勾选文件 / 暂存区 diff 收集
-│  │  ├─ OpenCodeRunner.kt                # 进程调用
-│  │  ├─ CommitMessageCleaner.kt          # 输出清洗
-│  │  ├─ JsonTextExtractor.kt             # 极简 JSON 解析，提取文本 part
-│  │  ├─ OpenCodeCommitSettings.kt        # 设置持久化
-│  │  └─ OpenCodeCommitConfigurable.kt    # 设置页
-│  └─ resources/META-INF/plugin.xml
+│  │  ├─ DiffCollector.kt                    # 勾选文件 / 暂存区 diff 收集
+│  │  ├─ OpenCodeRunner.kt                   # 进程调用
+│  │  ├─ CommitMessageCleaner.kt             # 输出清洗
+│  │  ├─ JsonTextExtractor.kt                # 极简 JSON（JsonLite/JsonParser），提取文本 part
+│  │  ├─ OpenCodeCommitSettings.kt           # 设置持久化
+│  │  └─ OpenCodeCommitConfigurable.kt       # 设置页（含获取模型列表）
+│  └─ resources/
+│     ├─ META-INF/plugin.xml
+│     └─ icons/
+│        ├─ opencodeCommit.svg               # 亮色主题图标
+│        └─ opencodeCommit_dark.svg          # 深色主题图标（按 _dark 约定自动切换）
+└─ gradle/wrapper/gradle-wrapper.properties
 ```
+
+## 许可证
+
+[MIT](./LICENSE) © 2026 yodg2gg
+
+本插件只是本地 opencode CLI 的一层壳，不转发也不保存你的代码，所有 diff 都直接交给本机上的 opencode 进程处理。
