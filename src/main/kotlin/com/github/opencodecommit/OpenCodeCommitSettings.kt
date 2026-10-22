@@ -45,8 +45,8 @@ class OpenCodeCommitSettings : PersistentStateComponent<OpenCodeCommitSettings.S
         /** 交给 opencode 的 diff 最大字符数，超出部分截断 */
         var maxDiffLength: Int = 20000
 
-        /** 无勾选且暂存区为空时，是否回落使用未暂存改动 */
-        var fallbackToUnstaged: Boolean = true
+        /** 提交窗口里什么都没勾选时，兜底是否把 Unversioned Files（未跟踪文件）也纳入 */
+        var includeUnversionedWhenNoSelection: Boolean = false
 
         /** 未勾选时是否额外给 opencode 最近 5 条提交记录作为风格参考 */
         var includeRecentCommits: Boolean = false
@@ -77,7 +77,7 @@ class OpenCodeCommitSettings : PersistentStateComponent<OpenCodeCommitSettings.S
     val subjectLimit: Int get() = myState.subjectLimit
     val timeoutSeconds: Int get() = myState.timeoutSeconds
     val maxDiffLength: Int get() = myState.maxDiffLength
-    val fallbackToUnstaged: Boolean get() = myState.fallbackToUnstaged
+    val includeUnversionedWhenNoSelection: Boolean get() = myState.includeUnversionedWhenNoSelection
     val includeRecentCommits: Boolean get() = myState.includeRecentCommits
     val promptTemplate: String get() = myState.promptTemplate
 

@@ -73,7 +73,8 @@ object OpenCodeRunner {
             if (!apiError.isNullOrBlank()) {
                 throw OpenCodeException("OpenCode 模型调用失败：$apiError", buildDetail(output))
             }
-            // 最后再直接用原始输出兜底一次
+            // 最后再直接用原始输出兜底一次；
+            // cleaner 会过滤掉 NDJSON 事件行，兜底拿不到正文时宁可报错也不把裸 JSON 写进提交框。
             message = CommitMessageCleaner.clean(output.stdout)
         }
         return message

@@ -55,6 +55,9 @@ object CommitMessageCleaner {
     private fun isNoise(line: String): Boolean {
         val trimmed = line.trim()
         if (trimmed.isEmpty()) return false
+        // opencode --format json 的 NDJSON 事件行（step_start/step_finish 等）。
+        // JSON 解析失败走原始输出兜底时，这类行绝不能被当成提交信息。
+        if (trimmed.startsWith("{") && trimmed.contains("\"type\":")) return true
         if (trimmed.startsWith("```")) return true
         if (trimmed.startsWith("# ")) return true
         if (trimmed.startsWith("|")) return true

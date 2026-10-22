@@ -106,8 +106,9 @@ class OpenCodeCommitConfigurable : BoundConfigurable(DISPLAY_NAME) {
                     .comment("超过上限会截断，避免请求过大")
             }
             row {
-                checkBox("暂存区为空时回落使用未暂存改动")
-                    .bindSelected(config::fallbackToUnstaged)
+                checkBox("未勾选时把 Unversioned Files 也纳入")
+                    .bindSelected(config::includeUnversionedWhenNoSelection)
+                    .comment("提交窗口里什么都没勾选时，除全部改动外，是否连未跟踪的新文件一起交给 OpenCode（未跟踪文件可能较多）")
             }
             row {
                 checkBox("附带最近 5 条提交标题作为风格参考")

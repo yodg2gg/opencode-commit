@@ -21,10 +21,9 @@ class DiffException(message: String) : Exception(message)
  * 收集交给 opencode 的改动内容。
  *
  * 规则：
- * 1. 有勾选文件（Commit 工具窗口里 included changes / Changes 视图里选中的 changes）→ 只用这些文件；
- * 2. 没有勾选 → 只用暂存区(staged) 的 diff；
- * 3. 暂存区为空且设置允许 → 回落到未暂存改动；
- * 4. 未跟踪的新文件无法由 git diff 表达，改为附加内容快照。
+ * 1. 有显式文件（Commit 窗口勾选的 changes / 未跟踪文件，或 Changes 视图选中的 changes）→ 只用这些文件；
+ * 2. 没有任何显式文件（提交窗口未勾选且 IDE 改动列表为空）→ 扫描整个仓库，staged + 未暂存 + 未跟踪全部带上；
+ * 3. 未跟踪的新文件无法由 git diff 表达，改为附加内容快照。
  */
 object DiffCollector {
 
@@ -38,18 +37,29 @@ object DiffCollector {
     private const val MAX_NEW_FILE_LINES = 300
     private const val GIT_TIMEOUT_MS = 30_000
 
-    fun collect(project: Project, selected: List<Change>, settings: OpenCodeCommitSettings): Result {
+    fun collect(
+        project: Project,
+        selected: List<Change>,
+        settings: OpenCodeCommitSettings,
+        selectionLabel: String? = null,
+        unversioned: List<FilePath> = emptyList()
+    ): Result {
         val repositoryManager = GitUtil.getRepositoryManager(project)
         val repositories = repositoryManager.repositories
         if (repositories.isEmpty()) {
             throw DiffException("当前项目不是 Git 仓库，无法生成提交信息")
         }
 
-        val hasSelection = selected.isNotEmpty()
+        val hasSelection = selected.isNotEmpty() || unversioned.isNotEmpty()
         val groups = LinkedHashMap<GitRepository, MutableList<FilePath>>()
         if (hasSelection) {
             for (change in selected) {
                 val path = change.beforeRevision?.file ?: change.afterRevision?.file ?: continue
+                val repo = repositoryManager.getRepositoryForFile(path) ?: continue
+                groups.getOrPut(repo) { ArrayList() }.add(path)
+            }
+            // 提交窗口里勾选的未跟踪文件（Unversioned Files）没有 Change 对象，直接按路径并入
+            for (path in unversioned) {
                 val repo = repositoryManager.getRepositoryForFile(path) ?: continue
                 groups.getOrPut(repo) { ArrayList() }.add(path)
             }
@@ -63,6 +73,9 @@ object DiffCollector {
         val buffer = StringBuilder()
         var truncated = false
         var sawContent = false
+        var usedStaged = false
+        var usedUnstaged = false
+        var usedUntracked = false
 
         for ((repo, paths) in groups) {
             val filters: List<String>? = if (hasSelection) {
@@ -101,11 +114,13 @@ object DiffCollector {
                 if (y != ' ' && y != '?') unstaged.add(rel)
             }
 
-            val useUnstaged = hasSelection || (settings.fallbackToUnstaged && staged.isEmpty())
-            val useUntracked = hasSelection || (settings.fallbackToUnstaged && staged.isEmpty())
+            // 无论是否有显式选择，都把未暂存/未跟踪一并带上（部分暂存时两段内容都给模型）
+            val useUnstaged = true
+            val useUntracked = true
 
             if (staged.isNotEmpty()) {
                 sawContent = true
+                usedStaged = true
                 if (!appendChunk(buffer, "### staged changes (git diff --cached)\n", settings.maxDiffLength)) truncated = true
                 val diff = gitDiff(repo, cached = true, paths = staged.toList())
                 if (diff.isNotBlank() && !appendChunk(buffer, diff + "\n", settings.maxDiffLength)) truncated = true
@@ -113,6 +128,7 @@ object DiffCollector {
 
             if (useUnstaged && unstaged.isNotEmpty()) {
                 sawContent = true
+                usedUnstaged = true
                 if (!appendChunk(buffer, "### unstaged changes (git diff)\n", settings.maxDiffLength)) truncated = true
                 val diff = gitDiff(repo, cached = false, paths = unstaged.toList())
                 if (diff.isNotBlank() && !appendChunk(buffer, diff + "\n", settings.maxDiffLength)) truncated = true
@@ -123,6 +139,7 @@ object DiffCollector {
                     val patch = newFilePatch(repo, rel, settings.maxDiffLength)
                     if (patch.isBlank()) continue
                     sawContent = true
+                    usedUntracked = true
                     if (!appendChunk(buffer, "### new file (not tracked yet)\n", settings.maxDiffLength)) truncated = true
                     if (!appendChunk(buffer, patch + "\n", settings.maxDiffLength)) truncated = true
                 }
@@ -134,7 +151,7 @@ object DiffCollector {
                 if (hasSelection) {
                     "勾选的文件没有任何可提交的改动"
                 } else {
-                    "暂存区没有改动。请先 git add，或在设置里开启“无暂存时回落使用未暂存改动”"
+                    "没有检测到任何改动，无法生成提交信息"
                 }
             )
         }
@@ -157,7 +174,18 @@ object DiffCollector {
 
         val text = buffer.toString()
         val fileCount = text.lineSequence().count { it.startsWith("diff --git ") }
-        val label = if (hasSelection) "勾选的 ${selected.size} 个文件" else "暂存区"
+        val label = if (hasSelection) {
+            selectionLabel ?: "勾选的 ${selected.size} 个文件"
+        } else {
+            when {
+                usedStaged && (usedUnstaged || usedUntracked) -> "暂存区+未暂存"
+                usedStaged -> "暂存区"
+                usedUnstaged && usedUntracked -> "未暂存改动+新文件（回落）"
+                usedUnstaged -> "未暂存改动（回落）"
+                usedUntracked -> "未跟踪新文件（回落）"
+                else -> "暂存区"
+            }
+        }
         return Result(text, fileCount, label, truncated)
     }
 
