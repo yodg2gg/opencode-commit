@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
@@ -15,7 +15,7 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JButton
 
-class OpenCodeCommitConfigurable : BoundConfigurable(DISPLAY_NAME) {
+class OpenCodeCommitMessageConfigurable : BoundConfigurable(DISPLAY_NAME) {
 
     companion object {
         /**
@@ -28,7 +28,7 @@ class OpenCodeCommitConfigurable : BoundConfigurable(DISPLAY_NAME) {
         private const val FETCH_TIMEOUT_MS = 60000
     }
 
-    private val settings = OpenCodeCommitSettings.getInstance()
+    private val settings = OpenCodeCommitMessageSettings.getInstance()
     private val config get() = settings.uiState
 
     /** 「获取模型列表」要写入的目标输入框 / 要禁用的按钮，createPanel() 里赋值 */
@@ -77,8 +77,8 @@ class OpenCodeCommitConfigurable : BoundConfigurable(DISPLAY_NAME) {
                     .comment("附加到 opencode run 上，例如 --auto（自动批准权限请求）")
             }
             row("输出格式") {
-                comboBox(listOf(OpenCodeCommitSettings.FORMAT_JSON, OpenCodeCommitSettings.FORMAT_TEXT))
-                    .bindItem({ config.outputFormat }, { config.outputFormat = it ?: OpenCodeCommitSettings.FORMAT_JSON })
+                comboBox(listOf(OpenCodeCommitMessageSettings.FORMAT_JSON, OpenCodeCommitMessageSettings.FORMAT_TEXT))
+                    .bindItem({ config.outputFormat }, { config.outputFormat = it ?: OpenCodeCommitMessageSettings.FORMAT_JSON })
                     .comment("json = 解析 --format json 原始事件（推荐）；text = 直接取格式化输出并清洗工具行")
             }
             row("超时（秒）") {
@@ -93,8 +93,8 @@ class OpenCodeCommitConfigurable : BoundConfigurable(DISPLAY_NAME) {
 
         group("提交信息") {
             row("语言") {
-                comboBox(listOf(OpenCodeCommitSettings.LANG_CHINESE, OpenCodeCommitSettings.LANG_ENGLISH))
-                    .bindItem({ config.messageLanguage }, { config.messageLanguage = it ?: OpenCodeCommitSettings.LANG_CHINESE })
+                comboBox(listOf(OpenCodeCommitMessageSettings.LANG_CHINESE, OpenCodeCommitMessageSettings.LANG_ENGLISH))
+                    .bindItem({ config.messageLanguage }, { config.messageLanguage = it ?: OpenCodeCommitMessageSettings.LANG_CHINESE })
             }
             row("subject 长度上限") {
                 intTextField(20..200)

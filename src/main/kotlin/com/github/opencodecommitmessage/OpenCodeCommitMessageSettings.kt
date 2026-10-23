@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -11,8 +11,8 @@ import com.intellij.util.xmlb.XmlSerializerUtil
  * 插件设置（应用级持久化）。
  */
 @Service(Service.Level.APP)
-@State(name = "OpenCodeCommitSettings", storages = [Storage("openCodeCommit.xml")])
-class OpenCodeCommitSettings : PersistentStateComponent<OpenCodeCommitSettings.State> {
+@State(name = "OpenCodeCommitMessageSettings", storages = [Storage("openCodeCommitMessage.xml")])
+class OpenCodeCommitMessageSettings : PersistentStateComponent<OpenCodeCommitMessageSettings.State> {
 
     class State {
         /** opencode 可执行文件：写 "opencode" 时依赖 PATH；也可写绝对路径，如 C:/Users/me/AppData/.../opencode.cmd */
@@ -105,6 +105,6 @@ Output requirements:
 """
 
         @JvmStatic
-        fun getInstance(): OpenCodeCommitSettings = service()
+        fun getInstance(): OpenCodeCommitMessageSettings = service()
     }
 }

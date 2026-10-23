@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
@@ -40,7 +40,7 @@ object DiffCollector {
     fun collect(
         project: Project,
         selected: List<Change>,
-        settings: OpenCodeCommitSettings,
+        settings: OpenCodeCommitMessageSettings,
         selectionLabel: String? = null,
         unversioned: List<FilePath> = emptyList()
     ): Result {

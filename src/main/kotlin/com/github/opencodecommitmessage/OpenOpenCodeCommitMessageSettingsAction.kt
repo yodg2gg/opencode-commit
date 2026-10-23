@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -15,11 +15,11 @@ import com.intellij.openapi.options.ShowSettingsUtil
  * 「要选中页面的 displayName」而不是 configurable 的 id —— IC 2024.3 内部走的是
  * findPreselectedByDisplayName，用 getDisplayName() 做精确相等比较，传 id 会选不中。
  */
-class OpenOpenCodeCommitSettingsAction : AnAction("Open Settings...") {
+class OpenOpenCodeCommitMessageSettingsAction : AnAction("Open Settings...") {
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.EDT
 
     override fun actionPerformed(e: AnActionEvent) {
-        ShowSettingsUtil.getInstance().showSettingsDialog(e.project, OpenCodeCommitConfigurable.DISPLAY_NAME)
+        ShowSettingsUtil.getInstance().showSettingsDialog(e.project, OpenCodeCommitMessageConfigurable.DISPLAY_NAME)
     }
 }

@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.github.opencodecommit</id>
+    <id>com.github.opencodecommitmessage</id>
     <name>OpenCode Commit Message</name>
     <vendor url="https://opencode.ai">yodg2gg</vendor>
 
@@ -24,18 +24,18 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService
-                serviceImplementation="com.github.opencodecommit.OpenCodeCommitSettings"/>
+                serviceImplementation="com.github.opencodecommitmessage.OpenCodeCommitMessageSettings"/>
         <applicationConfigurable
                 parentId="tools"
                 id="settings.opencode.commit"
-                instance="com.github.opencodecommit.OpenCodeCommitConfigurable"
+                instance="com.github.opencodecommitmessage.OpenCodeCommitMessageConfigurable"
                 displayName="OpenCode Commit Message"/>
-        <notificationGroup id="opencode.commit" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="opencode.commit.message" displayType="BALLOON" isLogByDefault="true"/>
     </extensions>
 
     <actions>
-        <action id="OpenCodeCommit.GenerateMessage"
-                class="com.github.opencodecommit.GenerateCommitMessageAction"
+        <action id="OpenCodeCommitMessage.GenerateMessage"
+                class="com.github.opencodecommitmessage.GenerateCommitMessageAction"
                 icon="/icons/opencodeCommit.svg"
                 text="Generate Commit Message By OpenCode"
                 description="Generate a Conventional Commits message by OpenCode, using the ticked files or the staged diff when nothing is ticked.">

@@ -5,4 +5,4 @@ pluginManagement {
     }
 }
 
-rootProject.name = "opencode-commit"
+rootProject.name = "opencode-commit-message"

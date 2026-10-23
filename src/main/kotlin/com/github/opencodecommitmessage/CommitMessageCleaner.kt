@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 /**
  * 把 opencode 的原始输出清洗成可以直接写进 Commit 输入框的提交信息。

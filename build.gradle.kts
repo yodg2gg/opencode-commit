@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.intellij.platform") version "2.5.0"
 }
 
-group = "com.github.opencodecommit"
+group = "com.github.opencodecommitmessage"
 version = "1.0.0"
 
 repositories {

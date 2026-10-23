@@ -9,9 +9,10 @@
 
 | 场景 | 取什么内容交给 opencode |
 | --- | --- |
-| 在 Commit 工具窗口**勾选了文件** | 只取勾选的那些文件（暂存 + 未暂存 + 未跟踪新文件的快照） |
-| **没有勾选任何文件** | 只取暂存区内容（`git diff --cached`） |
-| 暂存区为空 | 按设置可回落取未暂存改动（`git diff`），否则提示先 `git add` |
+| 在 Commit 工具窗口**勾选了文件** | 只取勾选的那些文件（Changes 和 Unversioned Files 都算） |
+| **一个都没勾选** | 取提交窗口列出的**全部改动**（不是 git 暂存区）；按设置可连未跟踪新文件一起纳入 |
+| 每个文件具体给什么 | 暂存 + 未暂存 + 未跟踪快照都给模型（部分暂存时两段都给），尽量不漏改动 |
+| 完全没有可提交改动 | 提示"没有检测到任何改动" |
 
 生成入口有下面两个，**点一下就直接生成，没有二级菜单**：
 
@@ -40,7 +41,7 @@
 
 **方式一：直接装构建好的包**（最省事）
 
-1. 从 [Releases](https://github.com/yodg2gg/opencode-commit/releases) 页面下载 `opencode-commit-1.0.0.zip`；
+1. 从 [Releases](https://github.com/yodg2gg/opencode-commit/releases) 页面下载 `opencode-commit-message-1.0.0.zip`；
 2. IDEA → Settings → Plugins → ⚙ → *Install Plugin from Disk…* → 选中该 zip → 重启 IDE。
 
 **方式二：自己从源码构建**
@@ -48,7 +49,7 @@
 需要 **JDK 17+**。首次构建会下载 IntelliJ IDEA Community 2024.3 依赖（约 700MB）。
 
 ```bash
-# 构建，产物在 build/distributions/opencode-commit-1.0.0.zip
+# 构建，产物在 build/distributions/opencode-commit-message-1.0.0.zip
 ./gradlew buildPlugin
 
 # （可选）用 IntelliJ Plugin Verifier 做兼容性检查，会额外下载一个用于验证的 IDE
@@ -65,7 +66,7 @@
 > `distributionUrl=https\://services.gradle.org/distributions/gradle-8.12-bin.zip` 即可。
 
 > 构建状态：已在 Windows 11 + Microsoft OpenJDK 17.0.20.1 + Gradle 8.12 下 `./gradlew buildPlugin` 通过，
-> 产物 `opencode-commit-1.0.0.zip` 约 66KB（其中的 `lib/opencode-commit-1.0.0.jar` 约 70KB）。
+> 产物 `opencode-commit-message-1.0.0.zip` 约 66KB（其中的 `lib/opencode-commit-message-1.0.0.jar` 约 70KB）。
 
 兼容范围：`since-build 243`，即 IDEA 2024.3 及更新版本（含所有基于该平台的 JetBrains IDE）。
 
@@ -77,7 +78,7 @@
 
 要改配置就点气泡上的 *Open Settings...*（报错时尤其方便，气泡上同样有这个按钮）。
 
-不想勾选文件时：先把改动 `git add` 进暂存区，再点按钮即可。
+不想勾选文件时：直接点按钮即可，插件会取提交窗口列出的全部改动；未跟踪的新文件默认不带，需要就在设置里打开"未勾选时纳入未跟踪文件"。
 
 ## 设置（Settings → Tools → OpenCode Commit Message）
 
@@ -93,7 +94,7 @@
 | 语言 | Simplified Chinese | 提交信息语言，可切 `English` |
 | subject 长度上限 | 72 | 写入提示词 |
 | diff 最大字符数 | 20000 | 超出会截断，避免请求过大 |
-| 暂存区为空时回落使用未暂存改动 | 开 | 无勾选且无暂存时的兜底 |
+| 未勾选时纳入未跟踪文件 | 关 | 提交窗口什么都没勾选时，除全部改动外是否连 Unversioned Files 一起交给模型（未跟踪文件可能较多） |
 | 附带最近 5 条提交标题 | 关 | 打开后会把 `git log` 标题附给模型，让风格更贴近仓库历史 |
 | 提示词模板 | 内置 Conventional Commits 模板 | 支持占位符 `{language}`、`{subject_limit}` |
 
@@ -111,10 +112,10 @@
 ```
 cd <项目根目录>
 opencode run --format json [--model X] [--agent Y] [--attach URL] [额外参数] \
-             --file <临时 diff 文件> "<提示词>"
+             "<提示词>" --file=<临时 diff 文件>
 ```
 
-- diff 内容写在临时文件里用 `-f` 附加，避免命令行长度限制；
+- diff 内容写在临时文件里用 `--file=` 附加，避免命令行长度限制；提示词是位置参数，必须排在 `--file` 之前（`--file` 是 yargs 的 array 选项，会吞掉其后的普通参数）；
 - 不调用任何 shell，参数逐个传递，路径含空格/中文都安全；
 - Windows 下把可执行文件填成 `.cmd/.bat`（npm 安装时只有这种 shim）时，进程会经 cmd.exe 转发——cmd 会把多行提示词从换行处截断、连后面的 `--file` 一起丢掉；插件检测到 `.cmd/.bat` 会自动把提示词压成单行兜底，但更稳妥的做法是直接填真正的 `.exe`；
 - 工作目录设为项目根目录，opencode 能读到项目里的 `AGENTS.md` / `opencode.json`；
@@ -140,6 +141,13 @@ opencode 还没配模型 key。终端里跑 `opencode auth login` 配置，或�
 **Q：生成很慢？**
 默认 `opencode run` 每次都会新起本地服务（含 MCP 冷启动）。建议终端常驻 `opencode serve`，然后在设置里填 Attach URL = `http://localhost:4096`。
 
+**Q：填了 Attach URL，却报 `Unexpected server error` / 通知里是 `UnknownError`，看起来像"连不上"？**
+多半不是网络问题——端口其实是通的。按这个顺序查：
+1. 浏览器或 `curl http://127.0.0.1:4096/global/health` 若返回 `{"healthy":true,...}`，说明 serve 活着、网络没问题；
+2. 打开 serve 日志 `~/.local/share/opencode/log/opencode.log`，用错误里的 `ref`（如 `err_xxxxxxxx`）搜到 `message=failed` 那行，看真实报错；
+3. 最常见的是**默认模型下线**：例如日志出现 `ProviderModelNotFoundError: Model not found: opencode/xxx-free`。跑 `opencode models` 核对模型名是否还在列表，把配置里失效的模型名（如 `~/.config/opencode/oh-my-opencode-slim.json` 里 preset 的 model）改成现存模型；
+4. **改完必须重启 `opencode serve`**——配置只在启动时读入内存，不重启不生效。
+
 **Q：Windows 上中文 diff 乱码？**
 插件已强制 UTF-8 读写；如果依然异常，检查 `git config i18n.commitEncoding` 与源码文件编码是否一致。
 
@@ -154,21 +162,21 @@ IC 2024.3 里提交信息区的按钮是 `ActionButton`，它只有一个点击�
 ## 目录结构
 
 ```
-opencode-commit/
+opencode-commit-message/
 ├─ build.gradle.kts
 ├─ settings.gradle.kts
 ├─ gradle.properties
 ├─ LICENSE                                 # MIT
 ├─ src/main/
-│  ├─ kotlin/com/github/opencodecommit/
-│  │  ├─ GenerateCommitMessageAction.kt      # 入口 Action（单击即生成）
-│  │  ├─ OpenOpenCodeCommitSettingsAction.kt # 通知气泡上的打开设置页按钮
-│  │  ├─ DiffCollector.kt                    # 勾选文件 / 暂存区 diff 收集
-│  │  ├─ OpenCodeRunner.kt                   # 进程调用
-│  │  ├─ CommitMessageCleaner.kt             # 输出清洗
-│  │  ├─ JsonTextExtractor.kt                # 极简 JSON（JsonLite/JsonParser），提取文本 part
-│  │  ├─ OpenCodeCommitSettings.kt           # 设置持久化
-│  │  └─ OpenCodeCommitConfigurable.kt       # 设置页（含获取模型列表）
+│  ├─ kotlin/com/github/opencodecommitmessage/
+│  │  ├─ GenerateCommitMessageAction.kt        # 入口 Action（单击即生成）
+│  │  ├─ OpenOpenCodeCommitMessageSettingsAction.kt # 通知气泡上的打开设置页按钮
+│  │  ├─ DiffCollector.kt                      # 勾选文件 / 全部改动 diff 收集
+│  │  ├─ OpenCodeRunner.kt                     # 进程调用
+│  │  ├─ CommitMessageCleaner.kt               # 输出清洗
+│  │  ├─ JsonTextExtractor.kt                  # 极简 JSON（JsonLite/JsonParser），提取文本 part
+│  │  ├─ OpenCodeCommitMessageSettings.kt      # 设置持久化（@State name / openCodeCommitMessage.xml）
+│  │  └─ OpenCodeCommitMessageConfigurable.kt  # 设置页（含获取模型列表）
 │  └─ resources/
 │     ├─ META-INF/plugin.xml
 │     └─ icons/

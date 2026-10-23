@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -41,7 +41,7 @@ class GenerateCommitMessageAction : AnAction() {
         val project = e.project ?: return
         val workflowUi = e.getData(VcsDataKeys.COMMIT_WORKFLOW_UI)
 
-        val settings = OpenCodeCommitSettings.getInstance()
+        val settings = OpenCodeCommitMessageSettings.getInstance()
         val selected: List<Change>
         val unversioned: List<FilePath>
         val selectionLabel: String?
@@ -154,9 +154,9 @@ class GenerateCommitMessageAction : AnAction() {
      */
     private fun notify(project: Project, title: String, content: String, type: NotificationType) {
         NotificationGroupManager.getInstance()
-            .getNotificationGroup("opencode.commit")
+            .getNotificationGroup("opencode.commit.message")
             .createNotification(title, content, type)
-            .addAction(OpenOpenCodeCommitSettingsAction())
+            .addAction(OpenOpenCodeCommitMessageSettingsAction())
             .notify(project)
     }
 

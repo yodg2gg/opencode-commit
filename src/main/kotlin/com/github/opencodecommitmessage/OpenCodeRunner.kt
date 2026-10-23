@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
@@ -21,8 +21,8 @@ object OpenCodeRunner {
     class OpenCodeException(message: String, val detail: String = "") : Exception(message)
 
     fun generate(project: Project, diffText: String, indicator: ProgressIndicator?): String {
-        val settings = OpenCodeCommitSettings.getInstance()
-        val attachment = FileUtil.createTempFile("opencode-commit-", ".diff")
+        val settings = OpenCodeCommitMessageSettings.getInstance()
+        val attachment = FileUtil.createTempFile("opencode-commit-message-", ".diff")
         attachment.writeText(diffText, StandardCharsets.UTF_8)
 
         val command = buildCommand(project, settings, attachment)
@@ -56,8 +56,8 @@ object OpenCodeRunner {
         return message
     }
 
-    private fun parse(output: ProcessOutput, settings: OpenCodeCommitSettings): String {
-        val jsonMode = settings.outputFormat == OpenCodeCommitSettings.FORMAT_JSON
+    private fun parse(output: ProcessOutput, settings: OpenCodeCommitMessageSettings): String {
+        val jsonMode = settings.outputFormat == OpenCodeCommitMessageSettings.FORMAT_JSON
 
         var raw = if (jsonMode) JsonTextExtractor.extractText(output.stdout) else output.stdout
         var message = CommitMessageCleaner.clean(raw)
@@ -82,7 +82,7 @@ object OpenCodeRunner {
 
     private fun buildCommand(
         project: Project,
-        settings: OpenCodeCommitSettings,
+        settings: OpenCodeCommitMessageSettings,
         attachment: File
     ): GeneralCommandLine {
         val command = GeneralCommandLine()
@@ -91,7 +91,7 @@ object OpenCodeRunner {
         command.withCharset(StandardCharsets.UTF_8)
 
         command.addParameters("run")
-        if (settings.outputFormat == OpenCodeCommitSettings.FORMAT_JSON) {
+        if (settings.outputFormat == OpenCodeCommitMessageSettings.FORMAT_JSON) {
             command.addParameters("--format", "json")
         }
         if (settings.model.isNotBlank()) command.addParameters("--model", settings.model.trim())
@@ -126,14 +126,14 @@ object OpenCodeRunner {
      * 实测：多行参数经 cmd 后只剩 1 个；压成单行后 5 个参数全部完整送达。
      * 所以走 cmd 层时把换行和缩进压成单空格，直达 exe 时保持原样。
      */
-    private fun instructionForShell(settings: OpenCodeCommitSettings): String {
+    private fun instructionForShell(settings: OpenCodeCommitMessageSettings): String {
         val instruction = buildInstruction(settings)
         val exe = settings.executablePath.trim()
         val viaCmdShell = SystemInfo.isWindows && (exe.endsWith(".cmd", true) || exe.endsWith(".bat", true))
         return if (viaCmdShell) instruction.replace(Regex("\\s*\\R+\\s*"), " ") else instruction
     }
 
-    private fun buildInstruction(settings: OpenCodeCommitSettings): String {
+    private fun buildInstruction(settings: OpenCodeCommitMessageSettings): String {
         return settings.promptTemplate
             .replace("{language}", settings.messageLanguage)
             .replace("{subject_limit}", settings.subjectLimit.toString())

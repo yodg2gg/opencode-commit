@@ -1,4 +1,4 @@
-package com.github.opencodecommit
+package com.github.opencodecommitmessage
 
 /**
  * 极简 JSON 解析器 + 提取器。
